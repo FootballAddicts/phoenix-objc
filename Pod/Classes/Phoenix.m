@@ -98,11 +98,12 @@
 #pragma mark - Helpers
 
 - (void)send:(NSString*)topic event:(NSString*)event payload:(id)payload {
-
+	static int ref = 0;
     NSDictionary *message = @{
                               @"topic": topic,
                               @"event": event,
                               @"payload": payload ?: [NSNull null]
+                              @"ref": [@(ref++) stringValue]
                               };
 
     NSData *data = [NSJSONSerialization dataWithJSONObject:message options:0 error:nil];
