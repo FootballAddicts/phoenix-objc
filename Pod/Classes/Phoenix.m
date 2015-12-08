@@ -70,7 +70,7 @@
     _channels[channel.topic] = channel;
 
     // Joins channel
-    [self send:channel.topic event:@"join" payload:channel.payload];
+    [self send:channel.topic event:@"phx_join" payload:channel.payload];
 
     return YES;
 }
@@ -84,7 +84,7 @@
     [_channels removeObjectForKey:channel.topic];
 
     // Leaves channel
-    [self send:channel.topic event:@"leave" payload:nil];
+    [self send:channel.topic event:@"phx_leave" payload:nil];
 
     return YES;
 }
