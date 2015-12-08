@@ -102,7 +102,7 @@
     NSDictionary *message = @{
                               @"topic": topic,
                               @"event": event,
-                              @"payload": payload ?: [NSNull null]
+                              @"payload": payload ?: [NSNull null],
                               @"ref": [@(ref++) stringValue]
                               };
 
