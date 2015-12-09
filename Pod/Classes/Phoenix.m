@@ -26,8 +26,9 @@
 @interface PhoenixChannel()
 
 @property (nonatomic, strong) NSMutableDictionary *listeners;
+@property (nonatomic, strong) NSMutableDictionary *replyHandlers;
 
-- (void)handleEvent:(NSString*)event withMessage:(id)message;
+- (void)handleEvent:(NSString*)event withMessage:(id)message ref:(NSString *)ref;
 
 @end
 
@@ -98,12 +99,13 @@
 
 #pragma mark - Helpers
 
-- (void)send:(NSString*)topic event:(NSString*)event payload:(id)payload {
+- (NSString *)send:(NSString*)topic event:(NSString*)event payload:(id)payload {
+    NSString *ref = @(_ref++).stringValue;
     NSDictionary *message = @{
                               @"topic": topic,
                               @"event": event,
                               @"payload": payload ?: [NSNull null],
-                              @"ref": [@(_ref++) stringValue]
+                              @"ref": ref
                               };
 
     NSData *data = [NSJSONSerialization dataWithJSONObject:message options:0 error:nil];
@@ -116,7 +118,7 @@
             [_delegate phoenix:self sentEvent:event onTopic:topic withPayload:payload];
         }
     }];
-
+    return ref;
 }
 
 #pragma mark - SRWebSocketDelegate
@@ -125,7 +127,8 @@
     NSDictionary *resp = [NSJSONSerialization JSONObjectWithData:[message dataUsingEncoding:NSUTF8StringEncoding] options:0 error:nil];
 
     PhoenixChannel *channel = _channels[resp[@"topic"]];
-    [channel handleEvent:resp[@"event"] withMessage:resp[@"payload"]];
+    NSString *ref = [resp[@"ref"] isKindOfClass:[NSString class]] ? resp[@"ref"] : nil;
+    [channel handleEvent:resp[@"event"] withMessage:resp[@"payload"] ref:ref];
 }
 
 - (void)webSocketDidOpen:(SRWebSocket *)webSocket {
@@ -173,7 +176,8 @@
         _payload = payload;
         _phoenix = phoenix;
 
-        _listeners = @{}.mutableCopy;
+        _listeners = [NSMutableDictionary new];
+        _replyHandlers = [NSMutableDictionary new];
     }
     return self;
 }
@@ -188,8 +192,11 @@
     return [_phoenix leaveChannel:self];
 }
 
-- (void)sendEvent:(NSString*)event payload:(id)payload {
-    [_phoenix send:_topic event:event payload:payload];
+- (void)sendEvent:(NSString*)event payload:(id)payload onReply:(HandleReplyBlock)handleReplyBlock {
+    NSString *msgRef = [_phoenix send:_topic event:event payload:payload];
+    if (handleReplyBlock) {
+        _replyHandlers[msgRef] = handleReplyBlock;
+    }
 }
 
 - (void)on:(NSString*)event handleEventBlock:(HandleEventBlock)handleEventBlock {
@@ -198,10 +205,17 @@
 
 #pragma mark - Private
 
-- (void)handleEvent:(NSString*)event withMessage:(id)message {
+- (void)handleEvent:(NSString*)event withMessage:(id)message ref:(NSString *)ref {
     HandleEventBlock block = _listeners[event];
     if (block) {
         block(message);
+    }
+
+    if (ref) {
+        HandleReplyBlock replyBlock = _replyHandlers[ref];
+        if (replyBlock) {
+            replyBlock(message);
+        }
     }
 }
 

@@ -37,6 +37,7 @@
 @interface PhoenixChannel : NSObject
 
 typedef void(^HandleEventBlock)(id message);
+typedef void(^HandleReplyBlock)(id reply);
 
 @property (nonatomic, strong, readonly) NSString *topic;
 @property (nonatomic, strong, readonly) NSDictionary *payload;
@@ -47,7 +48,7 @@ typedef void(^HandleEventBlock)(id message);
 - (BOOL)join;
 - (BOOL)leave;
 
-- (void)sendEvent:(NSString*)event payload:(id)payload;
+- (void)sendEvent:(NSString*)event payload:(id)payload onReply:(HandleReplyBlock)handleReplyBlock;
 
 - (void)on:(NSString*)event handleEventBlock:(HandleEventBlock)handleEventBlock;
 
