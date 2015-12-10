@@ -215,6 +215,7 @@
         HandleReplyBlock replyBlock = _replyHandlers[ref];
         if (replyBlock) {
             replyBlock(message);
+            [_replyHandlers removeObjectForKey:ref];
         }
     }
 }
