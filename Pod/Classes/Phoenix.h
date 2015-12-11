@@ -14,7 +14,7 @@
 @interface Phoenix : NSObject
 
 @property (nonatomic, strong, readonly) NSURL *url;
-@property (nonatomic, assign) id<PhoenixDelegate> delegate;
+@property (nonatomic, weak) id<PhoenixDelegate> delegate;
 
 - (instancetype)initWithURL:(NSURL*)url;
 
